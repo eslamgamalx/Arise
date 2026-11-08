@@ -33617,14 +33617,8 @@ transformed += normal * 0.022;`,
     (s === "walk" && c.setEffectiveTimeScale(Math.min(2.3, Math.max(0.8, e.spd / 1.6))),
       s === "sprint" && c.setEffectiveTimeScale(Math.min(2.5, Math.max(1, e.spd / 2.2))));
     let f = s === "walk" || s === "sprint" ? -0.62 : 0;
-    if (
-      ((i.model.rotation.y += (f - i.model.rotation.y) * Math.min(1, t * 10)),
-      i.mixer.update(t),
-      s === "idle" || s === "idleC")
-    ) {
-      let o = i.spine2;
-      o && o.rotateX(Math.sin(i.t * 2.2) * 0.025);
-    }
+    ((i.model.rotation.y += (f - i.model.rotation.y) * Math.min(1, t * 10)),
+      i.mixer.update(t));
   }
   async function qd(i = 1.8) {
     let e = Mo.meta,
@@ -33660,6 +33654,18 @@ transformed += normal * 0.022;`,
       (o.receiveShadow = !0),
       (o.frustumCulled = !1));
     let l = f.position.clone(),
+      bMap = Object.fromEntries(e.bones.map((A) => [A.n, A])),
+      idleQ = {
+        mixamorigRightUpLeg: [0, 0, 0.9985, 0.055],
+        mixamorigLeftUpLeg: [0, 0, 0.9985, -0.055],
+        mixamorigRightLeg: [0, 0, 0, 1],
+        mixamorigLeftLeg: [0, 0, 0, 1],
+        mixamorigRightFoot: [0.54, 0, 0, 0.8417],
+        mixamorigLeftFoot: [0.54, 0, 0, 0.8417],
+        mixamorigRightToeBase: [0.21, 0, 0, 0.9777],
+        mixamorigLeftToeBase: [0.21, 0, 0, 0.9777],
+        mixamorigHead: [-0.07, 0, 0, 0.9975],
+      },
       u = {};
     for (let [A, w] of Object.entries(e.anims)) {
       let v = new Float32Array(w.fr);
@@ -33676,10 +33682,21 @@ transformed += normal * 0.022;`,
         for (let Y of D.tracks) {
           let I = Y.tn.endsWith("quaternion"),
             ee = I ? 4 : 3,
-            _ = new Float32Array(X * ee);
+            _ = new Float32Array(X * ee),
+            bName = Y.tn.split(".")[0],
+            bDef = bMap[bName],
+            useBind = y.idle && bDef && (/Leg|Foot|Toe|Hips|Spine|Neck|Head/.test(bName)),
+            qOv = useBind && I && idleQ[bName];
           for (let C = 0; C < X; C++) {
             let ne = Math.min(D.fr - 1, w + (y.idle ? 0 : C));
-            for (let te = 0; te < ee; te++) _[C * ee + te] = I ? Y.v[ne * ee + te] / 32767 : Y.v[ne * ee + te];
+            for (let te = 0; te < ee; te++)
+              _[C * ee + te] = qOv
+                ? qOv[te]
+                : useBind
+                  ? (I ? bDef.q[te] : bDef.pos[te])
+                  : I
+                    ? Y.v[ne * ee + te] / 32767
+                    : Y.v[ne * ee + te];
           }
           if (I) {
             for (let C = 0; C < X * 4; C += 4) {
