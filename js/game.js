@@ -33733,7 +33733,7 @@ transformed += normal * 0.022;`,
     }
     (s === "walk" && c.setEffectiveTimeScale(Math.min(2.3, Math.max(0.8, e.spd / 1.6))),
       s === "sprint" && c.setEffectiveTimeScale(Math.min(2.5, Math.max(1, e.spd / 2.2))));
-    let f = s === "walk" || s === "sprint" ? -0.62 : 0;
+    let f = s === "walk" ? -0.62 : 0;
     ((i.model.rotation.y += (f - i.model.rotation.y) * Math.min(1, t * 10)),
       i.mixer.update(t));
   }
@@ -33812,7 +33812,7 @@ transformed += normal * 0.022;`,
                 : useBind
                   ? (I ? bDef.q[te] : bDef.pos[te])
                   : I
-                    ? Y.v[ne * ee + te] / 32767
+                    ? (Y.v instanceof Int16Array ? Y.v[ne * ee + te] / 32767 : Y.v[ne * ee + te])
                     : Y.v[ne * ee + te];
           }
           if (I) {
@@ -33824,8 +33824,10 @@ transformed += normal * 0.022;`,
           } else {
             let C = _[0],
               ne = _[2];
-            for (let te = 0; te < X * 3; te += 3)
-              ((_[te] = l.x + (y.keepXZ ? _[te] - C : 0)), (_[te + 2] = l.z + (y.keepXZ ? _[te + 2] - ne : 0)));
+            for (let te = 0; te < X * 3; te += 3) {
+              if (Math.abs(_[te + 1]) > 5) _[te + 1] *= 0.01;
+              ((_[te] = l.x + (y.keepXZ ? (_[te] > 5 ? (_[te] - C) * 0.01 : _[te] - C) : 0)), (_[te + 2] = l.z + (y.keepXZ ? (_[te + 2] > 5 ? (_[te + 2] - ne) * 0.01 : _[te + 2] - ne) : 0)));
+            }
             W.push(new Kn(Y.tn, se, _));
           }
         }
