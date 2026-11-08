@@ -1,5 +1,5 @@
 // UMBRAKAI service worker — always fetch fresh, fall back to cache offline.
-const CACHE = 'umbrakai-v2';
+const CACHE = 'umbrakai-v3';
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
