@@ -25977,12 +25977,36 @@ void main() {
         ]),
         (mo = [
           {
+            t: "\u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0635\u064A\u062F",
+            d: "\u0627\u0642\u062A\u0644 3 \u0648\u062D\u0648\u0634.",
+            k: "kills",
+            n: 3,
+            rel: !0,
+            r: { xp: 35, gold: 40 },
+          },
+          {
+            t: "\u0625\u062D\u0645\u0627\u0621 \u0633\u0631\u064A\u0639",
+            d: "\u0627\u062C\u0631\u064A \u0645\u0633\u0627\u0641\u0629 250 \u0645\u062A\u0631.",
+            k: "dist",
+            n: 250,
+            rel: !0,
+            r: { xp: 40, gold: 50, hp: 1 },
+          },
+          {
+            t: "\u062A\u062C\u0631\u0628\u0629 \u0627\u0644\u0645\u0647\u0627\u0631\u0627\u062A",
+            d: "\u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0645\u0647\u0627\u0631\u0627\u062A 5 \u0645\u0631\u0627\u062A.",
+            k: "skills",
+            n: 5,
+            rel: !0,
+            r: { xp: 50, gold: 60, mp: 1 },
+          },
+          {
             t: "\u062A\u062F\u0631\u064A\u0628 \u0627\u0644\u0635\u064A\u0627\u062F",
             d: "\u0627\u0642\u062A\u0644 10 \u0648\u062D\u0648\u0634.",
             k: "kills",
             n: 10,
             rel: !0,
-            r: { xp: 60, gold: 80 },
+            r: { xp: 80, gold: 90, pts: 1 },
           },
           {
             t: "\u0627\u0644\u0639\u062F\u0651\u0627\u0621",
@@ -25999,6 +26023,14 @@ void main() {
             n: 15,
             rel: !0,
             r: { xp: 100, mp: 1 },
+          },
+          {
+            t: "\u0645\u0637\u0647\u0651\u0631 \u0627\u0644\u063A\u0627\u0628\u0629",
+            d: "\u0627\u0642\u062A\u0644 20 \u0648\u062D\u0634.",
+            k: "kills",
+            n: 20,
+            rel: !0,
+            r: { xp: 160, gold: 150, pts: 1 },
           },
           {
             t: "\u0645\u0646\u0638\u0651\u0641 \u0627\u0644\u0628\u0648\u0627\u0628\u0627\u062A",
@@ -27747,7 +27779,7 @@ transformed += normal * 0.022;`,
     nd = Ot(() => {
       zo = class {
         constructor() {
-          ((this.ctx = null), (this.vol = 0.6), (this.music = 0.35), (this.bgm = null));
+          ((this.ctx = null), (this.vol = 0.6), (this.music = 0.35), (this.musicOn = !0), (this.musicStyle = "anime"), (this.curScene = "field"), (this.bgm = null));
         }
         init() {
           if (this.ctx) return;
@@ -27760,7 +27792,7 @@ transformed += normal * 0.022;`,
             (this.master.gain.value = this.vol),
             this.master.connect(this.ctx.destination),
             (this.mus = this.ctx.createGain()),
-            (this.mus.gain.value = this.music * 0.5),
+            (this.mus.gain.value = this.musicOn ? this.music * 0.55 : 0),
             this.mus.connect(this.ctx.destination));
           let e = this.ctx.sampleRate;
           this.noise = this.ctx.createBuffer(1, e, this.ctx.sampleRate);
@@ -27770,8 +27802,15 @@ transformed += normal * 0.022;`,
         setVol(e) {
           ((this.vol = e), this.master && (this.master.gain.value = e));
         }
-        setMusic(e) {
-          ((this.music = e), this.mus && (this.mus.gain.value = e * 0.5));
+        setMusic(e, on = this.musicOn, style = this.musicStyle) {
+          let styleChanged = style !== this.musicStyle,
+            onChanged = on !== this.musicOn;
+          ((this.music = e),
+            (this.musicOn = on),
+            (this.musicStyle = style),
+            this.mus && (this.mus.gain.value = on ? e * 0.55 : 0));
+          if (!on || e <= 0) this.stopMusic();
+          else if ((styleChanged || onChanged || !this.bgm) && this.ctx) this.startMusic(this.curScene || "field");
         }
         tone(e, t, n = "sine", s = 0.3, r = 0, a = 0, c) {
           if (!this.ctx) return;
@@ -27884,60 +27923,138 @@ transformed += normal * 0.022;`,
             }
         }
         startMusic(e = "field") {
+          this.curScene = e;
           if (!this.ctx) return;
           this.stopMusic();
+          if (!this.musicOn || this.music <= 0) return;
           let t = this.ctx,
-            n = [],
-            s = !0,
-            r = {
-              field: [261.6, 293.7, 329.6, 392, 440, 523.3],
-              dungeon: [130.8, 155.6, 174.6, 196, 233.1, 261.6],
-              boss: [110, 116.5, 146.8, 155.6, 220],
-            },
-            a = r[e] || r.field,
-            c = (u, x, p) => {
-              let d = t.createOscillator(),
-                S = t.createGain(),
-                m = t.createBiquadFilter();
-              ((d.type = e === "field" ? "triangle" : "sawtooth"),
-                (d.frequency.value = u),
-                (m.type = "lowpass"),
-                (m.frequency.value = e === "field" ? 1200 : 600),
-                S.gain.setValueAtTime(1e-4, x),
-                S.gain.linearRampToValueAtTime(0.07, x + p * 0.3),
-                S.gain.linearRampToValueAtTime(1e-4, x + p),
-                d.connect(m),
-                m.connect(S),
-                S.connect(this.mus),
-                d.start(x),
-                d.stop(x + p + 0.1));
-            },
-            f = t.currentTime + 0.1,
-            o = e === "boss" ? 0.5 : 0.9,
-            l = () => {
-              if (s) {
-                for (; f < t.currentTime + 2;) {
-                  let u = a[Math.floor(Math.random() * a.length)];
-                  if (
+            s = !0;
+          if (this.musicStyle === "classic") {
+            let r = {
+                field: [261.6, 293.7, 329.6, 392, 440, 523.3],
+                dungeon: [130.8, 155.6, 174.6, 196, 233.1, 261.6],
+                boss: [110, 116.5, 146.8, 155.6, 220],
+              },
+              a = r[e] || r.field,
+              c = (u, x, p) => {
+                let d = t.createOscillator(),
+                  S = t.createGain(),
+                  m = t.createBiquadFilter();
+                ((d.type = e === "field" ? "triangle" : "sawtooth"),
+                  (d.frequency.value = u),
+                  (m.type = "lowpass"),
+                  (m.frequency.value = e === "field" ? 1200 : 600),
+                  S.gain.setValueAtTime(1e-4, x),
+                  S.gain.linearRampToValueAtTime(0.07, x + p * 0.3),
+                  S.gain.linearRampToValueAtTime(1e-4, x + p),
+                  d.connect(m),
+                  m.connect(S),
+                  S.connect(this.mus),
+                  d.start(x),
+                  d.stop(x + p + 0.1));
+              },
+              f = t.currentTime + 0.1,
+              o = e === "boss" ? 0.5 : 0.9,
+              l = () => {
+                if (s) {
+                  for (; f < t.currentTime + 2;) {
+                    let u = a[Math.floor(Math.random() * a.length)];
                     (c(u / 2, f, o * 4),
-                    Math.random() < 0.7 && c(u * (Math.random() < 0.5 ? 1 : 1.5), f + o, o * 2.5),
-                    e !== "field" && Math.random() < 0.6)
-                  ) {
-                    let x = t.createOscillator(),
-                      p = t.createGain();
-                    (x.frequency.setValueAtTime(70, f),
-                      x.frequency.exponentialRampToValueAtTime(40, f + 0.3),
-                      p.gain.setValueAtTime(0.25, f),
-                      p.gain.exponentialRampToValueAtTime(0.001, f + 0.35),
-                      x.connect(p),
-                      p.connect(this.mus),
-                      x.start(f),
-                      x.stop(f + 0.4));
+                      Math.random() < 0.7 && c(u * (Math.random() < 0.5 ? 1 : 1.5), f + o, o * 2.5),
+                      (f += o * 2));
                   }
-                  f += o * 2;
+                  this.bgmT = setTimeout(l, 500);
                 }
-                this.bgmT = setTimeout(l, 500);
+              };
+            (l(), (this.bgm = { stop: () => { ((s = !1), clearTimeout(this.bgmT)); } }));
+            return;
+          }
+          // Anime Hype Ost (Solo Leveling / Sawano dark action style)
+          let step = e === "boss" ? 0.115 : e === "dungeon" ? 0.13 : 0.145,
+            roots = e === "boss" ? [73.42, 77.78, 87.31, 65.41] : [73.42, 58.27, 65.41, 87.31],
+            melody = e === "boss"
+              ? [293.66, 311.13, 349.23, 440, 466.16, 440, 349.23, 311.13, 293.66, 349.23, 440, 587.33, 523.25, 466.16, 440, 349.23]
+              : [293.66, 349.23, 440, 392, 349.23, 329.63, 293.66, 261.63, 293.66, 349.23, 440, 523.25, 466.16, 440, 392, 349.23],
+            playNote = (freq, when, dur, type, gain, cutoff = 1800, detune = 0) => {
+              let o = t.createOscillator(),
+                g = t.createGain(),
+                flt = t.createBiquadFilter();
+              ((o.type = type),
+                (o.frequency.setValueAtTime(freq, when)),
+                detune && (o.detune.value = detune),
+                (flt.type = "lowpass"),
+                flt.frequency.setValueAtTime(cutoff, when),
+                flt.frequency.exponentialRampToValueAtTime(Math.max(200, cutoff * 0.35), when + dur),
+                g.gain.setValueAtTime(1e-4, when),
+                g.gain.linearRampToValueAtTime(gain, when + 0.012),
+                g.gain.exponentialRampToValueAtTime(1e-4, when + dur),
+                o.connect(flt),
+                flt.connect(g),
+                g.connect(this.mus),
+                o.start(when),
+                o.stop(when + dur + 0.03));
+            },
+            playDrum = (kind, when) => {
+              if (kind === "kick") {
+                let o = t.createOscillator(),
+                  g = t.createGain();
+                (o.frequency.setValueAtTime(135, when),
+                  o.frequency.exponentialRampToValueAtTime(36, when + 0.14),
+                  g.gain.setValueAtTime(0.32, when),
+                  g.gain.exponentialRampToValueAtTime(1e-4, when + 0.16),
+                  o.connect(g),
+                  g.connect(this.mus),
+                  o.start(when),
+                  o.stop(when + 0.18));
+              } else if (this.noise) {
+                let src = t.createBufferSource(),
+                  flt = t.createBiquadFilter(),
+                  g = t.createGain();
+                ((src.buffer = this.noise),
+                  (flt.type = kind === "snare" ? "bandpass" : "highpass"),
+                  (flt.frequency.value = kind === "snare" ? 1800 : 7500),
+                  g.gain.setValueAtTime(kind === "snare" ? 0.18 : 0.05, when),
+                  g.gain.exponentialRampToValueAtTime(1e-4, when + (kind === "snare" ? 0.13 : 0.045)),
+                  src.connect(flt),
+                  flt.connect(g),
+                  g.connect(this.mus),
+                  src.start(when, Math.random() * 0.5),
+                  src.stop(when + 0.15));
+                if (kind === "snare") playNote(180, when, 0.08, "triangle", 0.12, 800);
               }
+            },
+            f = t.currentTime + 0.08,
+            idx = 0,
+            l = () => {
+              if (!s) return;
+              for (; f < t.currentTime + 1.2;) {
+                let bar = Math.floor(idx / 16) % 4,
+                  b = idx % 16,
+                  root = roots[bar];
+                // Driving bass ostinato
+                if (b % 2 === 0 || b === 7 || b === 15) {
+                  let bf = b === 14 ? root * 1.5 : root;
+                  playNote(bf, f, step * 1.6, "sawtooth", 0.14, e === "boss" ? 1100 : 850);
+                }
+                // Power chord stab on bar start and syncopated hit
+                if (b === 0 || b === 6 || b === 12) {
+                  playNote(root * 2, f, step * 3.2, "sawtooth", 0.065, 1600, -8);
+                  playNote(root * 3, f, step * 3.2, "sawtooth", 0.055, 1600, 8);
+                }
+                // Heroic anime lead melody + octave layer
+                if (b % 2 === 0 || b === 3 || b === 11 || (e === "boss" && b % 2 === 1)) {
+                  let mf = melody[(bar * 4 + Math.floor(b / 2)) % melody.length];
+                  playNote(mf, f, step * 1.9, "sawtooth", 0.075, 2600, -5);
+                  playNote(mf * 2, f, step * 1.5, "square", 0.03, 3000, 5);
+                }
+                // Drums: Kick on 0, 3, 6, 8, 10, Snare on 4, 12, Hats on 16ths
+                if (b === 0 || b === 3 || b === 6 || b === 8 || b === 10 || (e === "boss" && b === 14)) playDrum("kick", f);
+                if (b === 4 || b === 12) playDrum("snare", f);
+                if (b % 2 === 1 || e === "boss") playDrum("hat", f);
+                f += step;
+                idx++;
+              }
+              this.bgmT = setTimeout(l, 250);
             };
           (l(),
             (this.bgm = {
@@ -33815,7 +33932,7 @@ transformed += normal * 0.022;`,
       Qd = "arise_settings_v1",
       cp = matchMedia("(pointer: coarse)").matches,
       lt = Object.assign(
-        { quality: cp ? "low" : "med", sens: 1, vol: 0.6, music: 0.35, bloom: !0, time: "day", invert: !1, fov: 62 },
+        { quality: cp ? "low" : "med", sens: 1, vol: 0.6, music: 0.35, musicOn: !0, musicStyle: "anime", bloom: !0, time: "day", invert: !1, fov: 62 },
         JSON.parse(localStorage.getItem(Qd) || "{}"),
       ),
       wo = () => localStorage.setItem(Qd, JSON.stringify(lt)),
@@ -34373,6 +34490,8 @@ transformed += normal * 0.022;`,
             U.skillsUsed++,
             (k.combatT = 4),
             (Wo = 1.5),
+            Ma(),
+            Xv(),
             i === "Q")
           ) {
             let t = iS();
@@ -34808,7 +34927,7 @@ transformed += normal * 0.022;`,
             1.4,
           ));
       }
-      ((i.canExtract = U.arise && !i.noExtract), We && Gv(i));
+      ((i.canExtract = U.arise && !i.noExtract), We && Gv(i), Ma(), Xv());
     }
     function qc(i) {
       U.xp += i;
@@ -36106,9 +36225,9 @@ transformed += normal * 0.022;`,
     <div class="tt" style="font-weight:800;color:#bff0ff">\u0627\u0644\u0645\u0647\u0645\u0629 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629: ${i.t}</div><div>${i.d}</div>
     ${(() => {
       let t = gc();
-      return t
-        ? `<hr style="border-color:rgba(160,110,255,.35);margin:12px 0"><div style="font-weight:800;color:#d9c2ff">[\u0645\u0647\u0645\u0629 \u062C\u0627\u0646\u0628\u064A\u0629] ${t.q.t}</div><div class="row"><span>${t.q.d}</span><b>${t.p} / ${t.q.n}</b></div><div class="tag">\u0627\u0644\u0645\u0643\u0627\u0641\u0623\u0629: ${uS(t.q.r)}</div>`
-        : '<hr style="border-color:rgba(160,110,255,.35);margin:12px 0"><div class="tag">\u{1F512} \u0627\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u062C\u0627\u0646\u0628\u064A\u0629 \u0628\u062A\u0641\u062A\u062D \u0628\u0639\u062F \u0645\u0627 \u062A\u062E\u0644\u0635 \u0623\u0648\u0644 \u0645\u0647\u0645\u0629 \u0631\u0626\u064A\u0633\u064A\u0629.</div>';
+      if (!t) return "";
+      let nextQ = U.sq.i + 1 < mo.length ? mo[U.sq.i + 1] : DP(U.sq.i + 1 - mo.length);
+      return `<hr style="border-color:rgba(160,110,255,.35);margin:12px 0"><div style="font-weight:800;color:#d9c2ff">[\u0645\u0647\u0645\u0629 \u0645\u062A\u062A\u0627\u0644\u064A\u0629 #${t.idx}] ${t.q.t}</div><div class="row"><span>${t.q.d}</span><b>${t.p} / ${t.q.n}</b></div><div class="tag">\u0627\u0644\u0645\u0643\u0627\u0641\u0623\u0629: ${uS(t.q.r)}</div><div class="tag" style="margin-top:4px;color:#9fd0ff">\u27A1 \u0627\u0644\u0645\u0647\u0645\u0629 \u0627\u0644\u062A\u0627\u0644\u064A\u0629 (#${t.idx + 1}): ${nextQ.t} \u2014 ${nextQ.d}</div>`;
     })()}
     <hr style="border-color:rgba(79,195,255,.3);margin:12px 0">
     <div style="font-weight:800;color:#bff0ff">[\u0645\u0647\u0645\u0629 \u064A\u0648\u0645\u064A\u0629] \u0627\u0644\u0627\u0633\u062A\u0639\u062F\u0627\u062F \u0644\u062A\u0635\u0628\u062D \u0623\u0642\u0648\u0649 ${e.done ? "\u2705" : ""}</div>
@@ -36135,12 +36254,12 @@ transformed += normal * 0.022;`,
       gates: () => Object.values(U.cleared).reduce((i, e) => i + (+e || 0), 0),
     };
     function gc() {
-      if (!U || U.main < 1) return null;
+      if (!U) return null;
       U.sq || (U.sq = { i: 0, base: null });
       let i = U.sq.i < mo.length ? mo[U.sq.i] : DP(U.sq.i - mo.length);
       U.sq.base == null && (U.sq.base = i.rel ? Ed[i.k]() : 0);
       let e = Ed[i.k]() - (i.rel ? U.sq.base : 0);
-      return { q: i, p: Math.max(0, Math.min(i.n, Math.floor(e))) };
+      return { q: i, p: Math.max(0, Math.min(i.n, Math.floor(e))), idx: U.sq.i + 1 };
     }
     function uS(i) {
       return [
@@ -36154,41 +36273,36 @@ transformed += normal * 0.022;`,
         .join(" \xB7 ");
     }
     function Vv() {
-      let i = gc();
-      if (!i || i.p < i.q.n) return;
-      let { q: e } = i,
-        t = e.r;
-      ((U.gold += t.gold || 0),
-        (U.pts += t.pts || 0),
-        (U.pot.hp += t.hp || 0),
-        (U.pot.mp += t.mp || 0),
-        t.xp && setTimeout(() => qc(t.xp), 400),
-        (U.sq = { i: U.sq.i + 1, base: null }),
-        Ge.play("levelup"),
+      let loops = 0;
+      while (loops++ < 5) {
+        let i = gc();
+        if (!i || i.p < i.q.n) break;
+        let { q: e, idx: qNum } = i,
+          t = e.r;
+        ((U.gold += t.gold || 0),
+          (U.pts += t.pts || 0),
+          (U.pot.hp += t.hp || 0),
+          (U.pot.mp += t.mp || 0),
+          t.xp && setTimeout(() => qc(t.xp), 300),
+          (U.sq = { i: U.sq.i + 1, base: null }),
+          Ge.play("levelup"));
+        let n = gc();
         sn(
-          `<b>\u0645\u0647\u0645\u0629 \u062C\u0627\u0646\u0628\u064A\u0629 \u0645\u0643\u062A\u0645\u0644\u0629</b><br>${e.t}<br><span class="tag">${uS(t)}</span>`,
+          `<b>\u2705 \u0645\u0647\u0645\u0629 \u0645\u062A\u062A\u0627\u0644\u064A\u0629 #${qNum} \u0645\u0643\u062A\u0645\u0644\u0629!</b><br>${e.t} <span class="tag">(${uS(t)})</span>${n ? `<hr style="border-color:rgba(160,110,255,.3);margin:6px 0"><b>\u27A1 \u0627\u0644\u0645\u0647\u0645\u0629 \u0627\u0644\u062A\u0627\u0644\u064A\u0629 #${n.idx}: ${n.q.t}</b><br>${n.q.d}` : ""}`,
           "#c9a6ff",
-        ));
-      let n = gc();
-      (n &&
-        setTimeout(
-          () =>
-            sn(
-              `<b>\u0645\u0647\u0645\u0629 \u062C\u0627\u0646\u0628\u064A\u0629 \u062C\u062F\u064A\u062F\u0629: ${n.q.t}</b><br>${n.q.d}`,
-              "#c9a6ff",
-            ),
-          2600,
-        ),
-        qs());
+        );
+        Xv();
+        qs();
+      }
     }
     function Xv() {
       let { main: i, daily: e } = lS();
       ie("trk").innerHTML = `<div class="tt">\u25C6 ${i.t}</div><div class="q">${i.d}</div>
    ${(() => {
      let t = gc();
-     return t
-       ? `<div class="tt" style="color:#d9c2ff">\u25C8 \u062C\u0627\u0646\u0628\u064A\u0629: ${t.q.t}</div><div class="q">${t.q.d} <b>${t.p}/${t.q.n}</b></div>`
-       : "";
+     if (!t) return "";
+     let pct = Math.min(100, Math.round((t.p / t.q.n) * 100));
+     return `<div class="tt" style="color:#d9c2ff">\u25C8 \u0645\u0647\u0645\u0629 #${t.idx}: ${t.q.t}</div><div class="q">${t.q.d} <b>(${t.p}/${t.q.n})</b></div><div style="height:4px;background:rgba(160,110,255,.2);border-radius:2px;margin:3px 0 6px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#8a4dff,#d9a6ff)"></i></div>`;
    })()}
    <div class="tt">\u25C7 \u0645\u0647\u0645\u0629 \u064A\u0648\u0645\u064A\u0629 ${e.done ? "\u2705" : ""}</div><div class="q">\u0648\u062D\u0648\u0634 ${Math.min(e.k, 25)}/25 \xB7 \u062C\u0631\u064A ${Math.min(Math.floor(e.d), 3e3)}/3000\u0645 \xB7 \u0645\u0647\u0627\u0631\u0627\u062A ${Math.min(e.s, 20)}/20</div>
    <div class="tag">[J] \u0627\u0644\u0645\u0647\u0627\u0645 \xB7 [Tab] \u0627\u0644\u062D\u0627\u0644\u0629 \xB7 [M] \u0627\u0644\u062E\u0631\u064A\u0637\u0629</div>`;
@@ -36569,8 +36683,10 @@ transformed += normal * 0.022;`,
    <div class="row"><span>\u0627\u0644\u0648\u0642\u062A</span><select id="sT"><option value="day">\u0646\u0647\u0627\u0631</option><option value="sunset">\u063A\u0631\u0648\u0628</option><option value="night">\u0644\u064A\u0644</option></select></div>
    <div class="row"><span>\u062D\u0633\u0627\u0633\u064A\u0629 \u0627\u0644\u0645\u0627\u0648\u0633</span><input type="range" id="sS" min="0.3" max="2.5" step="0.1"></div>
    <div class="row"><span>\u0645\u062C\u0627\u0644 \u0627\u0644\u0631\u0624\u064A\u0629 FOV</span><input type="range" id="sF" min="50" max="85" step="1"></div>
-   <div class="row"><span>\u0627\u0644\u0635\u0648\u062A</span><input type="range" id="sV" min="0" max="1" step="0.05"></div>
-   <div class="row"><span>\u0627\u0644\u0645\u0648\u0633\u064A\u0642\u0649</span><input type="range" id="sM" min="0" max="1" step="0.05"></div>
+   <div class="row"><span>\u0627\u0644\u0635\u0648\u062A (\u0627\u0644\u0645\u0624\u062B\u0631\u0627\u062A)</span><input type="range" id="sV" min="0" max="1" step="0.05"></div>
+   <div class="row"><span>\u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u0645\u0648\u0633\u064A\u0642\u0649</span><input type="checkbox" id="sMO"></div>
+   <div class="row"><span>\u0646\u0648\u0639 \u0627\u0644\u0645\u0648\u0633\u064A\u0642\u0649</span><select id="sMS"><option value="anime">\u{1F525} \u062D\u0645\u0627\u0633\u064A\u0629 (\u0623\u0646\u0645\u064A)</option><option value="classic">\u{1F3B5} \u0647\u0627\u062F\u0626\u0629 (\u0643\u0644\u0627\u0633\u064A\u0643)</option></select></div>
+   <div class="row"><span>\u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u0645\u0648\u0633\u064A\u0642\u0649</span><input type="range" id="sM" min="0" max="1" step="0.05"></div>
    <div class="row"><span>Bloom (\u0627\u0644\u062A\u0648\u0647\u062C)</span><input type="checkbox" id="sB"></div>
    <div class="row"><span>\u0639\u0643\u0633 \u0627\u0644\u0645\u0627\u0648\u0633 \u0639\u0645\u0648\u062F\u064A</span><input type="checkbox" id="sI"></div>
    <div style="text-align:center;margin-top:12px"><button class="btn" id="sOk">\u062A\u0645\u0627\u0645</button></div>`,
@@ -36581,7 +36697,13 @@ transformed += normal * 0.022;`,
         (ie("sS").value = lt.sens),
         (ie("sF").value = lt.fov),
         (ie("sV").value = lt.vol),
+        (ie("sMO").checked = lt.musicOn !== !1),
+        (ie("sMS").value = lt.musicStyle || "anime"),
         (ie("sM").value = lt.music),
+        (ie("sV").oninput = () => Ge.setVol(+ie("sV").value)),
+        (ie("sMO").onchange = () => Ge.setMusic(+ie("sM").value, ie("sMO").checked, ie("sMS").value)),
+        (ie("sMS").onchange = () => { Ge.init(); Ge.setMusic(+ie("sM").value, ie("sMO").checked, ie("sMS").value); }),
+        (ie("sM").oninput = () => Ge.setMusic(+ie("sM").value, ie("sMO").checked, ie("sMS").value)),
         (ie("sB").checked = lt.bloom),
         (ie("sI").checked = lt.invert),
         (ie("sOk").onclick = () => {
@@ -36593,13 +36715,15 @@ transformed += normal * 0.022;`,
             sens: +ie("sS").value,
             fov: +ie("sF").value,
             vol: +ie("sV").value,
+            musicOn: ie("sMO").checked,
+            musicStyle: ie("sMS").value,
             music: +ie("sM").value,
             bloom: ie("sB").checked,
             invert: ie("sI").checked,
           }),
             wo(),
             Ge.setVol(lt.vol),
-            Ge.setMusic(lt.music),
+            Ge.setMusic(lt.music, lt.musicOn, lt.musicStyle),
             (Jt.fov = lt.fov),
             Jt.updateProjectionMatrix(),
             eS(),
@@ -36702,7 +36826,7 @@ transformed += normal * 0.022;`,
     async function xp(i) {
       (Ge.init(),
         Ge.setVol(lt.vol),
-        Ge.setMusic(lt.music),
+        Ge.setMusic(lt.music, lt.musicOn !== !1, lt.musicStyle || "anime"),
         ie("launch").classList.add("hidden"),
         ie("hud").classList.remove("hidden"),
         cp && ie("touch").classList.remove("hidden"),
